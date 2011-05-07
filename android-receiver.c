@@ -21,19 +21,15 @@ struct message_t
     char *msg_text;
 };
 
-void             error(char *msg);
-struct message_t *parse_message(char *msg);
-void             handle_message(struct message_t *message);
-
 /* error and die */
-void error(char *msg)
+static void error(char *msg)
 {
     perror(msg);
     exit(EXIT_FAILURE);
 }
 
 /* we only handle v2 for now */
-struct message_t *parse_message(char *msg)
+static struct message_t *parse_message(char *msg)
 {
     struct message_t *message;
 
@@ -93,7 +89,7 @@ struct message_t *parse_message(char *msg)
 }
 
 /* for now we just hand off to my existing bash script */
-void handle_message(struct message_t *message)
+static void handle_message(struct message_t *message)
 {
     char *msg;
 
@@ -119,13 +115,13 @@ void handle_message(struct message_t *message)
 }
 
 /* signal handler for the forked handler processes */
-void sigchld_handler(int signum)
+static void sigchld_handler(int signum)
 {
     (void) signum; /* silence unused warning */
     waitpid(-1, NULL, 0);
 }
 
-int main()
+int main(void)
 {
     unsigned int fromlen;
     int          sock;
