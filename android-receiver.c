@@ -22,8 +22,8 @@ struct message_t
 };
 
 void             error(char *msg);
-struct message_t parse_message(char *msg);
-void             handle_message(struct message_t message);
+struct message_t *parse_message(char *msg);
+void             handle_message(struct message_t *message);
 
 /* error and die */
 void error(char *msg)
@@ -33,9 +33,9 @@ void error(char *msg)
 }
 
 /* we only handle v2 for now */
-struct message_t parse_message(char *msg)
+struct message_t *parse_message(char *msg)
 {
-    struct message_t message;
+    struct message_t *message;
 
     char *ptr = msg;
 
@@ -46,6 +46,8 @@ struct message_t parse_message(char *msg)
     int  c = 0; /* n position in the overall string       */
     int  i = 0; /* accumulated length of last seen field  */
     int  j = 0; /* n position of start of last seen field */
+
+    message = calloc(1, sizeof *message);
 
     while (1)
     {
@@ -65,10 +67,10 @@ struct message_t parse_message(char *msg)
                 switch(field)
                 {
                     case 4:
-                        message.msg_type = strndup(msg + j, i);
+                        message->msg_type = strndup(msg + j, i);
                         break;
                     case 5:
-                        message.msg_data = strndup(msg + j, i);
+                        message->msg_data = strndup(msg + j, i);
                         break;
                 }
             }
@@ -85,25 +87,25 @@ struct message_t parse_message(char *msg)
     i  = c - j;
 
     /* the last field is the text */
-    message.msg_text = strndup(msg + j, i);
+    message->msg_text = strndup(msg + j, i);
 
     return message;
 }
 
 /* for now we just hand off to my existing bash script */
-void handle_message(struct message_t message)
+void handle_message(struct message_t *message)
 {
     char *msg;
 
-    if (strcmp(message.msg_type, "RING") == 0)
+    if (strcmp(message->msg_type, "RING") == 0)
     {
-        asprintf(&msg, "  -!-  Call from %s", message.msg_text);
+        asprintf(&msg, "  -!-  Call from %s", message->msg_text);
     }
-    else if (strcmp(message.msg_type, "SMS")  == 0 ||
-             strcmp(message.msg_type, "MMS")  == 0 ||
-             strcmp(message.msg_type, "PING") == 0) /* test message */
+    else if (strcmp(message->msg_type, "SMS")  == 0 ||
+             strcmp(message->msg_type, "MMS")  == 0 ||
+             strcmp(message->msg_type, "PING") == 0) /* test message */
     {
-        asprintf(&msg, "  -!-  %s", message.msg_text);
+        asprintf(&msg, "  -!-  %s", message->msg_text);
     }
     else {
         msg = NULL;
@@ -130,7 +132,7 @@ int main()
     int          length;
     int          n;
 
-    struct message_t message;
+    struct message_t *message;
 
     struct sockaddr_in server;
     struct sockaddr_in from;
