@@ -14,23 +14,20 @@
 #define HANDLER "dzen-handler"
 
 /* just the parts we care about */
-struct message_t
-{
+struct message_t {
     char *msg_type;
     char *msg_data;
     char *msg_text;
 };
 
 /* error and die */
-static void error(char *msg)
-{
+static void error(char *msg) {
     perror(msg);
     exit(EXIT_FAILURE);
 }
 
 /* we only handle v2 for now */
-static struct message_t *parse_message(char *msg)
-{
+static struct message_t *parse_message(char *msg) {
     struct message_t *message;
 
     char *ptr = msg;
@@ -45,23 +42,20 @@ static struct message_t *parse_message(char *msg)
 
     message = calloc(1, sizeof *message);
 
-    while (1)
-    {
-        if (*ptr == delim)
-        {
+    while (1) {
+        if (*ptr == delim) {
             field++;
 
             /* there's a possibility of slashes in the sixth field so we'll
              * parse up to 5 and let the rest be picked up after the loop */
-            if (field <= 5)
-            {
-                if (i) /* these three lines made my head hurt */
+            if (field <= 5) {
+                if (i) { /* these three lines made my head hurt */
                     j += i + 1;
+                }
 
                 i = c - j;
 
-                switch(field)
-                {
+                switch(field) {
                     case 4:
                         message->msg_type = strndup(msg + j, i);
                         break;
@@ -75,8 +69,9 @@ static struct message_t *parse_message(char *msg)
         c++;
 
         /* EOM */
-        if (*ptr++ == '\0')
+        if (*ptr++ == '\0') {
             break;
+        }
     }
 
     j += i + 1;
@@ -89,21 +84,16 @@ static struct message_t *parse_message(char *msg)
 }
 
 /* for now we just hand off to my existing bash script */
-static void handle_message(struct message_t *message)
-{
+static void handle_message(struct message_t *message) {
     char *msg;
 
-    if (strcmp(message->msg_type, "RING") == 0)
-    {
+    if (strcmp(message->msg_type, "RING") == 0) {
         asprintf(&msg, "  -!-  Call from %s", message->msg_text);
-    }
-    else if (strcmp(message->msg_type, "SMS")  == 0 ||
-             strcmp(message->msg_type, "MMS")  == 0 ||
-             strcmp(message->msg_type, "PING") == 0) /* test message */
-    {
+    } else if (strcmp(message->msg_type, "SMS")  == 0 ||
+               strcmp(message->msg_type, "MMS")  == 0 ||
+               strcmp(message->msg_type, "PING") == 0) /* test message */ {
         asprintf(&msg, "  -!-  %s", message->msg_text);
-    }
-    else {
+    } else {
         msg = NULL;
     }
 
@@ -115,14 +105,12 @@ static void handle_message(struct message_t *message)
 }
 
 /* signal handler for the forked handler processes */
-static void sigchld_handler(int signum)
-{
+static void sigchld_handler(int signum) {
     (void) signum; /* silence unused warning */
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-int main(void)
-{
+int main(void) {
     unsigned int fromlen;
     int          sock;
     int          length;
@@ -141,8 +129,9 @@ int main(void)
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (sock < 0) 
+    if (sock < 0) {
         error("opening socket");
+    }
 
     length = sizeof(server);
 
@@ -152,8 +141,9 @@ int main(void)
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port        = htons(PORTNO);
 
-    if (bind(sock, (struct sockaddr *)&server, length) < 0) 
+    if (bind(sock, (struct sockaddr *)&server, length) < 0) {
         error("binding to socket");
+    }
 
     fromlen = sizeof(struct sockaddr_in);
 
@@ -163,12 +153,12 @@ int main(void)
     sig_child.sa_flags = 0;
     sigaction(SIGCHLD, &sig_child, NULL);
 
-    while (1)
-    {
+    while (1) {
         n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *)&from, &fromlen);
 
-        if (n < 0) 
+        if (n < 0) {
             error("receiving from socket");
+        }
 
         pid = fork();
 
@@ -178,4 +168,7 @@ int main(void)
             exit(EXIT_SUCCESS);
         }
     }
+
+    return EXIT_SUCCESS;
 }
+
