@@ -118,7 +118,7 @@ static void handle_message(struct message_t *message)
 static void sigchld_handler(int signum)
 {
     (void) signum; /* silence unused warning */
-    waitpid(-1, NULL, 0);
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 int main(void)
@@ -136,6 +136,8 @@ int main(void)
     char buf[1024];
 
     pid_t pid;
+
+    struct sigaction sig_child;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -155,8 +157,11 @@ int main(void)
 
     fromlen = sizeof(struct sockaddr_in);
 
-    /* listen for signals from the children we spawn */
-    signal(SIGCHLD, sigchld_handler);
+    /* listen for SIGCHLD from the children we spawn */
+    sig_child.sa_handler = &sigchld_handler;
+    sigemptyset(&sig_child.sa_mask);
+    sig_child.sa_flags = 0;
+    sigaction(SIGCHLD, &sig_child, NULL);
 
     while (1)
     {
