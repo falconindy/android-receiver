@@ -29,52 +29,33 @@ static void error(char *msg) {
 /* we only handle v2 for now */
 static struct message_t *parse_message(char *msg) {
     struct message_t *message;
-    char *ptr = msg;
-    char delim = '/';
+    char *tok;
     int field = 0;
-    int c = 0; /* n position in the overall string       */
-    int i = 0; /* accumulated length of last seen field  */
-    int j = 0; /* n position of start of last seen field */
 
     message = calloc(1, sizeof *message);
 
-    while (1) {
-        if (*ptr == delim) {
-            field++;
+    for (tok = strsep(&msg, "/"); *tok; tok = strsep(&msg, "/")) {
+      switch (++field) {
+        case 4:
+          if (tok) {
+            message->msg_type = strdup(tok);
+          }
+          break;
+        case 5:
+          message->msg_data = strdup(tok);
 
-            /* there's a possibility of slashes in the sixth field so we'll
-             * parse up to 5 and let the rest be picked up after the loop */
-            if (field <= 5) {
-                if (i) { /* these three lines made my head hurt */
-                    j += i + 1;
-                }
-
-                i = c - j;
-
-                switch(field) {
-                    case 4:
-                        message->msg_type = strndup(msg + j, i);
-                        break;
-                    case 5:
-                        message->msg_data = strndup(msg + j, i);
-                        break;
-                }
+          /* we wander off on our own here, independent of the for loop so we
+           * need to do our own error checking to avoid a NULL deref. */
+          if (msg) {
+            tok = strsep(&msg, "\0"); /* grab everything else */
+            if (tok) {
+              message->msg_text = strdup(tok);
             }
-        }
+          }
 
-        c++;
-
-        /* EOM */
-        if (*ptr++ == '\0') {
-            break;
-        }
+          return message;
+      }
     }
-
-    j += i + 1;
-    i  = c - j;
-
-    /* the last field is the text */
-    message->msg_text = strndup(msg + j, i);
 
     return message;
 }
