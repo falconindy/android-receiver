@@ -29,16 +29,12 @@ static void error(char *msg) {
 /* we only handle v2 for now */
 static struct message_t *parse_message(char *msg) {
     struct message_t *message;
-
     char *ptr = msg;
-
     char delim = '/';
-
     int field = 0;
-
-    int  c = 0; /* n position in the overall string       */
-    int  i = 0; /* accumulated length of last seen field  */
-    int  j = 0; /* n position of start of last seen field */
+    int c = 0; /* n position in the overall string       */
+    int i = 0; /* accumulated length of last seen field  */
+    int j = 0; /* n position of start of last seen field */
 
     message = calloc(1, sizeof *message);
 
@@ -112,20 +108,12 @@ static void sigchld_handler(int signum) {
 
 int main(void) {
     unsigned int fromlen;
-    int          sock;
-    int          length;
-    int          n;
-
+    int sock, length, n;
     struct message_t *message;
-
-    struct sockaddr_in server;
-    struct sockaddr_in from;
-
-    char buf[1024];
-
-    pid_t pid;
-
+    struct sockaddr_in from, server;
     struct sigaction sig_child;
+    char buf[1024];
+    pid_t pid;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -137,9 +125,9 @@ int main(void) {
 
     memset(&server, '\0', length);
 
-    server.sin_family      = AF_INET;
+    server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port        = htons(PORTNO);
+    server.sin_port = htons(PORTNO);
 
     if (bind(sock, (struct sockaddr *)&server, length) < 0) {
         error("binding to socket");
